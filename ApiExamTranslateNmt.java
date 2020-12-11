@@ -7,28 +7,28 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.util.Map;
+
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.net.MalformedURLException;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Set;
 
-// ³×ÀÌ¹ö ±â°è¹ø¿ª (Papago SMT) API ¿¹Á¦
+// ë„¤ì´ë²„ ê¸°ê³„ë²ˆì—­ (Papago SMT) API ì˜ˆì œ
 public class ApiExamTranslateNmt {
 
-    public static void main(String[] args) {
-        String clientId = "xtx3z1QXWyuj5UGbfgWF";//¾ÖÇÃ¸®ÄÉÀÌ¼Ç Å¬¶óÀÌ¾ğÆ® ¾ÆÀÌµğ°ª";
-        String clientSecret = "G3ZO6HjQK6";//¾ÖÇÃ¸®ÄÉÀÌ¼Ç Å¬¶óÀÌ¾ğÆ® ½ÃÅ©¸´°ª";
+    public static void main(String[] args) throws Exception {
+        String clientId = "xtx3z1QXWyuj5UGbfgWF";//ì• í”Œë¦¬ì¼€ì´ì…˜ í´ë¼ì´ì–¸íŠ¸ ì•„ì´ë””ê°’";
+        String clientSecret = "G3ZO6HjQK6";//ì• í”Œë¦¬ì¼€ì´ì…˜ í´ë¼ì´ì–¸íŠ¸ ì‹œí¬ë¦¿ê°’";
 
         String apiURL = "https://openapi.naver.com/v1/papago/n2mt";
+        String Str = "dog"; //ë²ˆì—­í•  ë‹¨ì–´. íŒŒíŒŒê³ ì—ì„œëŠ” ë¬¸ì¥ë„ ê°€ëŠ¥.
         String text;
+        
         try {
-            text = URLEncoder.encode("¾È³çÇÏ¼¼¿ä. ¿À´Ã ±âºĞÀº ¾î¶»½À´Ï±î?", "UTF-8");
+            text = URLEncoder.encode(Str, "UTF-8");
         } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("ÀÎÄÚµù ½ÇÆĞ", e);
+            throw new RuntimeException("ì¸ì½”ë”© ì‹¤íŒ¨", e);
         }
 
         Map<String, String> requestHeaders = new HashMap<>();
@@ -36,13 +36,23 @@ public class ApiExamTranslateNmt {
         requestHeaders.put("X-Naver-Client-Secret", clientSecret);
 
         String responseBody = post(apiURL, requestHeaders, text);
-
-        System.out.println(responseBody);
+        //System.out.println(responseBody);
+        
+        //ë²ˆì—­ ê²°ê³¼ë§Œ ì¶”ì¶œ
+        String[] array = responseBody.split(":"); //ê²°ê³¼ê°’ì„ ë°°ì—´ë¡œ ë‚˜ëˆ”.
+        int idx = array[8].indexOf(","); //array[8]ì€ ë²ˆì—­í•œ ê²°ê³¼ .
+        String ex_result = array[8].substring(0, idx);
+        String result = ex_result.substring(1,ex_result.length()-1); //í° ë”°ì˜´í‘œ ì œê±°
+        System.out.println("íŒŒíŒŒê³  ë²ˆì—­ ê²°ê³¼ : " + result);
+        
+        //ì˜ì˜ì‚¬ì „ ì˜ˆë¬¸ ë¶ˆëŸ¬ì˜¤ê¸°
+        HttpConnectionExample.sendGet(Str);
     }
 
     private static String post(String apiUrl, Map<String, String> requestHeaders, String text){
         HttpURLConnection con = connect(apiUrl);
-        String postParams = "source=ko&target=en&text=" + text; //¿øº»¾ğ¾î: ÇÑ±¹¾î (ko) -> ¸ñÀû¾ğ¾î: ¿µ¾î (en)
+        String postParams = "source=en&target=ko&text=" + text; //ì›ë³¸ì–¸ì–´: ì˜ì–´ (en) -> ëª©ì ì–¸ì–´: í•œêµ­ì–´ (ko)
+        
         try {
             con.setRequestMethod("POST");
             for(Map.Entry<String, String> header :requestHeaders.entrySet()) {
@@ -56,13 +66,13 @@ public class ApiExamTranslateNmt {
             }
 
             int responseCode = con.getResponseCode();
-            if (responseCode == HttpURLConnection.HTTP_OK) { // Á¤»ó ÀÀ´ä
+            if (responseCode == HttpURLConnection.HTTP_OK) { // ì •ìƒ ì‘ë‹µ
                 return readBody(con.getInputStream());
-            } else {  // ¿¡·¯ ÀÀ´ä
+            } else {  // ì—ëŸ¬ ì‘ë‹µ
                 return readBody(con.getErrorStream());
             }
         } catch (IOException e) {
-            throw new RuntimeException("API ¿äÃ»°ú ÀÀ´ä ½ÇÆĞ", e);
+            throw new RuntimeException("API ìš”ì²­ê³¼ ì‘ë‹µ ì‹¤íŒ¨", e);
         } finally {
             con.disconnect();
         }
@@ -73,9 +83,9 @@ public class ApiExamTranslateNmt {
             URL url = new URL(apiUrl);
             return (HttpURLConnection)url.openConnection();
         } catch (MalformedURLException e) {
-            throw new RuntimeException("API URLÀÌ Àß¸øµÇ¾ú½À´Ï´Ù. : " + apiUrl, e);
+            throw new RuntimeException("API URLì´ ì˜ëª»ë˜ì—ˆìŠµë‹ˆë‹¤. : " + apiUrl, e);
         } catch (IOException e) {
-            throw new RuntimeException("¿¬°áÀÌ ½ÇÆĞÇß½À´Ï´Ù. : " + apiUrl, e);
+            throw new RuntimeException("ì—°ê²°ì´ ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤. : " + apiUrl, e);
         }
     }
 
@@ -92,7 +102,7 @@ public class ApiExamTranslateNmt {
 
             return responseBody.toString();
         } catch (IOException e) {
-            throw new RuntimeException("API ÀÀ´äÀ» ÀĞ´Âµ¥ ½ÇÆĞÇß½À´Ï´Ù.", e);
+            throw new RuntimeException("API ì‘ë‹µì„ ì½ëŠ”ë° ì‹¤íŒ¨í–ˆìŠµë‹ˆë‹¤.", e);
         }
     }
 }
